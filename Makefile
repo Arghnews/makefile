@@ -8,20 +8,23 @@ CC          := g++
 TARGET      := program
 
 # The Directories, Source, Includes, Objects, Binary and Resources
+# Ensure BUILDDIR is a temporary directory as it will be deleted by clean
 SRCDIR      := src
 INCDIR      := include
 BUILDDIR    := obj
 TARGETDIR   := bin
-RESDIR      := res
+#RESDIR      := res
 SRCEXT      := cpp
 DEPEXT      := d
 OBJEXT      := o
 
 # Flags, Libraries and Includes
-CFLAGS      := -Wall -g -std=c++17 -Wl,-rpath,./xxHash/
-LIBDIR      := -LxxHash
-LIB         := -lpthread -lxxhash #-fopenmp -lm -larmadillo
-INC         := -Icxx-prettyprint -I$(INCDIR) -IxxHash #-I/usr/local/include
+# Here the runtime library path where xxHash is built is the same directory
+# as its source
+CFLAGS      := -Wall -g -std=c++17 #-Wl,-rpath,./xxHash/
+LIBDIR      := #-LxxHash
+LIB         := #-lpthread -lxxhash #-fopenmp -lm -larmadillo
+INC         := #-Icxx-prettyprint -I$(INCDIR) -IxxHash #-I/usr/local/include
 INCDEP      := $(INC)
 
 # ---------------------------------------------------------------------------------
@@ -36,27 +39,26 @@ all: resources prog
 prog: $(TARGETDIR)/$(TARGET) 
 
 # Remake
-remake: cleaner all
+#remake: cleaner all
 
 # Mirror contents of resources and target directories
 # Only needed if want res directory contents to be moved to bin on building
 resources: directories
-	@rsync --exclude=$(TARGET) --delete -a $(RESDIR)/ $(TARGETDIR)
+	@#rsync --exclude=$(TARGET) --delete -a $(RESDIR)/$(TARGETDIR)
 
 # Make the Directories
 directories:
 	@mkdir -p $(TARGETDIR)
 	@mkdir -p $(BUILDDIR)
-	@mkdir -p $(RESDIR)
+	@#mkdir -p $(RESDIR)
 
+# Don't delete targetdir in case it's . for example 
 clean:
 	@$(RM) -rf $(BUILDDIR)
-
-cleaner: clean
-	@$(RM) -rf $(TARGETDIR)
+	@$(RM) -f $(TARGETDIR)/$(TARGET)
 
 # Pull in dependency info for *existing* .o files
--include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
+#-include $(OBJECTS:.$(OBJEXT)=.$(DEPEXT))
 
 # Link
 $(TARGETDIR)/$(TARGET): $(OBJECTS)
@@ -73,7 +75,7 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 	@rm -f $(BUILDDIR)/$*.$(DEPEXT).tmp
 
 # Non-File Targets
-.PHONY: all remake clean cleaner resources prog
+.PHONY: all clean resources prog #remake
 
 # Good starting tutorial
 # 	https://gist.github.com/isaacs/62a2d1825d04437c6f08
@@ -95,3 +97,9 @@ $(BUILDDIR)/%.$(OBJEXT): $(SRCDIR)/%.$(SRCEXT)
 # - Unsure how slow this is, particularly on a big project on a spinny disc
 #   or (god-forbid) an NFS
 # - Added shell set to bash
+# remake doesn't work - I believe because of the order that make processes
+# dependencies and runs commands. So remake should "clean" then build "all"
+# however when running remake "clean" is run deleting the objects but then 
+# "all" is run and still sees (in "make -d" debug output) the objects there
+# and does not perform a rebuild. Unsure how to fix this
+

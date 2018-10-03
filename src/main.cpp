@@ -8,16 +8,20 @@
 
 #include "prettyprint.hpp"
 
-int main()
+template <typename T, std::size_t N>
+constexpr std::size_t size(const T(&)[N])
+{
+  return N;
+}
 
+int main()
 {
   std::cout << "Hello world " << aa() << "\n";
 
-  char arr[] = "asd";
-  std::cout << XXH64(arr, std::size(arr), 0) << "\n";
+  const char arr[] = "asd";
+  std::cout << XXH64(arr, size(arr), 0) << "\n";
 
-
-  std::cout << std::vector{3, 4} << "\n";
+  std::cout << std::vector<int>{3, 4} << "\n";
 
   return 0;
 }
